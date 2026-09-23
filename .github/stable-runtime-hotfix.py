@@ -62,6 +62,9 @@ runtime = r'''<style id="ubg43-final-runtime-style">
 'use strict';
 const $=id=>document.getElementById(id),grid=$('gameGrid'),search=$('searchBar'),clear=$('searchClear'),results=$('searchResults'),searchPage=$('searchPage'),searchPageText=$('searchPageText'),recSection=$('recommendSection'),trendRail=$('trendingRail'),newRail=$('newRail'),recRail=$('recommendRail');
 const REPORT_URL='https://forms.gle/zXYtnxwXhGvXmBrq9';
+const GLOBAL_TRENDING_API='https://api.counterapi.dev/v1';
+const GLOBAL_TRENDING_NAMESPACE='ubg43-global-trending-v1';
+const globalTrending={ready:false,loading:false,failed:false,counts:Object.create(null)};
 const BLOCKED_TITLE_PATTERNS=['[!] comments','suggest games','d4c9vfywyu','1 date danger'];
 const blockedTitle=c=>{const t=String(c?.querySelector('h3')?.textContent||'').trim().toLowerCase();return BLOCKED_TITLE_PATTERNS.some(x=>t.includes(x))||t.startsWith('[!]')};
 const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -72,7 +75,30 @@ const keyOf=c=>norm(titleOf(c))+'|'+urlOf(c).replace(/#.*$/,'');
 const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f))||f}catch(_){return f}};
 const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(_){}};
 const playKey=c=>norm(titleOf(c))+'|'+imageOf(c);
-const recordPlay=c=>{const h=read('ubg43_final_plays',{}),k=playKey(c),x=h[k]||{title:titleOf(c),plays:0,last:0};x.plays++;x.last=Date.now();h[k]=x;write('ubg43_final_plays',h)};
+const globalKey=c=>{let s=keyOf(c),h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return 'g_'+(h>>>0).toString(36)};
+const globalCount=c=>Number(globalTrending.counts[globalKey(c)]||0);
+const parseGlobalCount=data=>{const v=data?.count??data?.value??data?.data?.count??data?.data?.value;const n=Number(v);return Number.isFinite(n)?n:null};
+const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(sub)sub.textContent=globalTrending.ready?'Most played across UBG43':'Loading global play activity across UBG43…'};
+async function incrementGlobal(c){
+  if(!c||!titleOf(c))return;
+  const k=globalKey(c),now=Date.now(),sent=read('ubg43_global_sent',{}),last=Number(sent[k]||0);
+  if(now-last<60000)return;
+  sent[k]=now;write('ubg43_global_sent',sent);
+  globalTrending.counts[k]=(globalTrending.counts[k]||0)+1;
+  renderRails();decorate();
+  try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6000);
+    const r=await fetch(GLOBAL_TRENDING_API+'/'+encodeURIComponent(GLOBAL_TRENDING_NAMESPACE)+'/'+encodeURIComponent(k)+'/up',{cache:'no-store',mode:'cors',signal:controller.signal});
+    clearTimeout(timer);
+    if(!r.ok)throw new Error('global increment '+r.status);
+    const data=await r.json(),server=parseGlobalCount(data);
+    if(server!==null)globalTrending.counts[k]=server;
+    globalTrending.ready=true;globalTrending.failed=false;updateTrendRailState();renderRails();decorate();
+  }catch(_){
+    if(!globalTrending.ready)globalTrending.failed=true;
+  }
+}
+const recordPlay=c=>{const h=read('ubg43_final_plays',{}),k=playKey(c),x=h[k]||{title:titleOf(c),plays:0,last:0};x.plays++;x.last=Date.now();h[k]=x;write('ubg43_final_plays',h);incrementGlobal(c)};
 const recordSearch=q=>{const n=norm(q);if(n.length<2)return;const h=read('ubg43_final_searches',{}),x=h[n]||{count:0,last:0};x.count++;x.last=Date.now();h[n]=x;write('ubg43_final_searches',h)};
 const escapeHtml=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const isRawGame=u=>/^https:\/\/raw\.githubusercontent\.com\/gn-math\/html\//i.test(u);
@@ -154,14 +180,24 @@ async function loadLegacyIntoGrid(){
   return cards().length;
 }
 function isNew(c){if(c.dataset.new==='1')return true;const d=Date.parse(c.dataset.newSince||c.dataset.date||'');return Number.isFinite(d)&&Date.now()-d<45*86400000}
-function isTrending(c){const p=read('ubg43_final_plays',{})[playKey(c)]?.plays||0;return c.dataset.trending==='1'||c.dataset.trendingSeed==='1'||c.dataset.seed==='1'||p>0}
+function isTrending(c){return globalTrending.ready&&globalCount(c)>0}
 function badge(c,text,cls){const box=c.querySelector('.ubg43-badges')||(()=>{const x=document.createElement('div');x.className='ubg43-badges';c.append(x);return x})();const b=document.createElement('span');b.className='ubg43-badge '+cls;b.textContent=text;box.append(b)}
-function decorate(){const cs=cards();cs.forEach(c=>{c.querySelector('.ribbons')?.remove();c.querySelector('.ubg43-badges')?.remove();if(isNew(c))badge(c,'NEW','new');if(isTrending(c))badge(c,'TRENDING','trending')});if(cs.length&&!cs.some(isTrending))cs.slice(0,10).forEach(c=>badge(c,'TRENDING','trending'))}
+function decorate(){const cs=cards();cs.forEach(c=>{c.querySelector('.ribbons')?.remove();c.querySelector('.ubg43-badges')?.remove();if(isNew(c))badge(c,'NEW','new');if(isTrending(c))badge(c,'TRENDING','trending')})}
 function wire(c){if(!c)return;c.tabIndex=0;if(!c.dataset.url)c.dataset.url=urlOf(c)}
 function applyView(){const q=norm(search?.value||''),cat=window.__ubg43ActiveCategory||'All Games',cs=cards();cs.forEach(c=>{const text=norm(titleOf(c)),catOk=cat==='All Games'||(cat==='New Games'?isNew(c):cat==='Trending'?isTrending(c):(c.dataset.category||'Casual')===cat);c.style.display=catOk&&(!q||text.includes(q))?'':'none'});const shown=cs.filter(c=>c.style.display!=='none').length;if($('status'))$('status').textContent=`${shown} games shown`}
 function similarity(a,b){const A=new Set(norm(a).split(' ').filter(x=>x.length>1)),B=new Set(norm(b).split(' ').filter(x=>x.length>1));if(!A.size||!B.size)return 0;let n=0;A.forEach(x=>B.has(x)&&n++);return n/Math.sqrt(A.size*B.size)}
 function fillRail(rail,srcs){if(!rail)return;rail.innerHTML='';const used=new Set();srcs.forEach(src=>{if(blockedTitle(src))return;const k=keyOf(src);if(used.has(k))return;used.add(k);const c=src.cloneNode(true);c.dataset.url=urlOf(src);c.style.display='';c.hidden=false;c.querySelector('.ribbons')?.remove();c.querySelector('.ubg43-badges')?.remove();rail.append(c);wire(c);if(isNew(src))badge(c,'NEW','new');if(isTrending(src))badge(c,'TRENDING','trending')});if(srcs.length){const d=document.createElement('div');d.className='done';d.innerHTML='<span>That’s all for now ✨<small>More games are added automatically.</small></span>';rail.append(d)}}
-function renderRails(){const cs=cards(),ph=read('ubg43_final_plays',{}),tr=cs.slice().sort((a,b)=>((ph[playKey(b)]?.plays||0)-(ph[playKey(a)]?.plays||0))||Number(isTrending(b))-Number(isTrending(a))||titleOf(a).localeCompare(titleOf(b))).slice(0,24),fresh=cs.filter(isNew).slice(0,24);fillRail(trendRail,tr);fillRail(newRail,fresh.length?fresh:cs.slice(0,24))}
+function renderRails(){
+  const cs=cards(),fresh=cs.filter(isNew).slice(0,24);
+  if(globalTrending.ready){
+    const tr=cs.slice().sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b))).slice(0,24);
+    fillRail(trendRail,tr);
+  }else if(trendRail){
+    trendRail.innerHTML='<div class="done"><span>Global trends are loading…<small>Play activity from across UBG43 will appear here.</small></span></div>';
+  }
+  fillRail(newRail,fresh.length?fresh:cs.slice(0,24));
+  updateTrendRailState();
+}
 function recommendations(q){if(!recSection||!recRail)return;const ph=read('ubg43_final_plays',{}),sh=read('ubg43_final_searches',{}),n=norm(q),out=cards().filter(c=>!norm(titleOf(c)).includes(n)).map(c=>{let score=similarity(titleOf(c),q)*.72;score+=(ph[playKey(c)]?.plays||0)*.08;Object.entries(sh).forEach(([k,v])=>score+=similarity(titleOf(c),k)*Math.min(5,v.count||0)*.05);if(isNew(c))score+=.1;return {c,score}}).sort((a,b)=>b.score-a.score||titleOf(a.c).localeCompare(titleOf(b.c))).slice(0,24).map(x=>x.c);fillRail(recRail,out);recSection.classList.toggle('hidden',!out.length)}
 function setSearchMode(q){q=q.trim();if(!q){clearSearch();return}window.__ubg43SearchMode=true;document.body.classList.add('ubg43-searching');if(searchPage)searchPage.classList.remove('hidden');if(searchPageText)searchPageText.textContent=`Showing matching games for “${q}”.`;recordSearch(q);applyView();recommendations(q);results?.classList.remove('open');search?.blur()}
 function clearSearch(){window.__ubg43SearchMode=false;document.body.classList.remove('ubg43-searching');if(search)search.value='';if(clear)clear.style.display='none';results?.classList.remove('open');searchPage?.classList.add('hidden');recSection?.classList.add('hidden');applyView();window.scrollTo({top:0,behavior:'smooth'})}
@@ -183,9 +219,35 @@ function bind(){
  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('categorySidebar')?.classList.contains('open'))closeCategories()},{capture:true});
 }
 function sync(){cards().forEach(c=>{if(blockedTitle(c))c.remove();else wire(c)});decorate();renderRails();applyView();const s=$('status');if(s&&cards().length)s.textContent=cards().length+' games ready'}
+async function loadGlobalTrending(){
+  if(globalTrending.loading)return;
+  globalTrending.loading=true;updateTrendRailState();
+  try{
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
+    const r=await fetch(GLOBAL_TRENDING_API+'/'+encodeURIComponent(GLOBAL_TRENDING_NAMESPACE),{cache:'no-store',mode:'cors',signal:controller.signal});
+    clearTimeout(timer);
+    if(!r.ok)throw new Error('global trends '+r.status);
+    const data=await r.json();
+    const counters=Array.isArray(data?.counters)?data.counters:(Array.isArray(data?.data?.counters)?data.data.counters:null);
+    const map=Object.create(null);
+    if(counters){
+      counters.forEach(x=>{const k=String(x?.key||x?.name||'');const n=Number(x?.count??x?.value??x?.data?.count??x?.data?.value);if(k&&Number.isFinite(n))map[k]=n});
+    }else{
+      const obj=data?.counters&&typeof data.counters==='object'?data.counters:(data?.data?.counters&&typeof data.data.counters==='object'?data.data.counters:null);
+      if(obj)Object.entries(obj).forEach(([k,v])=>{const n=Number(v?.count??v?.value??v);if(Number.isFinite(n))map[k]=n});
+    }
+    if(!Object.keys(map).length&&typeof data==='object'&&!Array.isArray(data)){
+      Object.entries(data).forEach(([k,v])=>{const n=Number(v?.count??v?.value??v);if(k&&Number.isFinite(n))map[k]=n});
+    }
+    globalTrending.counts=map;globalTrending.ready=true;globalTrending.failed=false;
+  }catch(_){globalTrending.failed=true}
+  globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
+}
 function start(){
-  bind();sync();
-  loadLegacyIntoGrid().then(()=>{sync();setTimeout(sync,700);setTimeout(sync,1800);setTimeout(sync,3500)}).catch(()=>sync());
+  bind();sync();updateTrendRailState();
+  loadGlobalTrending();
+  setInterval(loadGlobalTrending,60000);
+  loadLegacyIntoGrid().then(()=>{sync();setTimeout(sync,700);setTimeout(sync,1800);setTimeout(sync,3500);loadGlobalTrending()}).catch(()=>{sync();loadGlobalTrending()});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
