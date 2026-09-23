@@ -4295,7 +4295,7 @@ const playKey=c=>norm(titleOf(c))+'|'+imageOf(c);
 const globalKey=c=>{let s=keyOf(c),h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return 'g_'+(h>>>0).toString(36)};
 const globalCount=c=>Number(globalTrending.counts[globalKey(c)]||0);
 const parseGlobalCount=data=>{const v=data?.count??data?.value??data?.data?.count??data?.data?.value;const n=Number(v);return Number.isFinite(n)?n:null};
-const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(!sub)return;sub.textContent=globalTrending.ready&&Object.keys(globalTrending.counts).length?'Most played across UBG43':globalTrending.ready?'Collecting global play activity across UBG43…':globalTrending.loading?'Loading global play activity across UBG43…':'Global trend data will update automatically'};
+const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(!sub)return;const live=Object.keys(globalTrending.counts).length;sub.textContent=live?'Most played across UBG43':globalTrending.loading?'Trending picks • loading global play activity…':globalTrending.failed?'Trending picks • will update automatically':'Starter picks • updates as people play'};
 async function incrementGlobal(c){
   if(!c||!titleOf(c))return;
   const k=globalKey(c),now=Date.now(),sent=read('ubg43_global_sent',{}),last=Number(sent[k]||0);
@@ -4454,7 +4454,7 @@ async function loadGlobalTrending(){
   }catch(_){globalTrending.failed=true}
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
-function start()){
+function start(){
   bind();sync();updateTrendRailState();
   loadGlobalTrending();
   setInterval(loadGlobalTrending,60000);
