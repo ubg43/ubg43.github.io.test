@@ -195,8 +195,8 @@ function renderRails(){
     fillRail(trendRail,tr);
   }else if(trendRail){
     trendRail.innerHTML=globalTrending.failed
-      ? '<div class="done"><span>Global trends are temporarily unavailable.<small>Game launches still work normally.</small></span></div>'
-      : '<div class="done"><span>Global trends are loading…<small>Play activity from across UBG43 will appear here.</small></span></div>';
+      ? '<div class="done"><span>Global trend data is temporarily unavailable.<small>Game launches still work normally.</small></span></div>'
+      : '<div class="done"><span>Collecting global play activity…<small>Play games on UBG43 and the worldwide totals will build automatically.</small></span></div>';
   }
   fillRail(newRail,fresh.length?fresh:cs.slice(0,24));
   updateTrendRailState();
