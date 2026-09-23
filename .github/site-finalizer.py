@@ -55,7 +55,7 @@ ad_required = [
     'popcash.net'
 ]
 bad += ['automatic ad-filter wiring missing: '+x for x in ad_required if x not in text]
-raw_game_urls = re.findall(r'https://raw\\.githubusercontent\\.com/[^\'\"\\s<>]+', text, flags=re.I)
+raw_game_urls = re.findall(r'https://raw\.githubusercontent\.com/[^\'\"\s<>]+', text, flags=re.I)
 if not raw_game_urls:
     bad.append('no hosted raw game URLs found to validate the ad-filter launch path')
 
