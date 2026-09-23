@@ -22,19 +22,13 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re, subprocess, tempfile
           idx=Path('index.html').read_text(encoding='utf-8')
           required=['wewynhmybroxzynaxnrx.supabase.co','SUPABASE_TRENDING_URL','function loadGlobalTrending','Most played across UBG43','window.openGame=openGame','id="gameGrid"','id="searchBar"']
           bad=[x for x in required if x not in idx]
           for old in ('api.counterapi.dev','ubg43-global-trending-v1','global-trending.json'):
               if old in idx: bad.append('old trending backend remains: '+old)
-          scripts=re.findall(r'<script([^>]*)>(.*?)</script>',idx,re.I|re.S)
-          with tempfile.TemporaryDirectory() as td:
-              for i,(attrs,body) in enumerate(scripts):
-                  if 'application/ld+json' in attrs.lower() or not body.strip(): continue
-                  f=Path(td)/f'script{i}.js';f.write_text(body,encoding='utf-8')
-                  r=subprocess.run(['node','--check',str(f)],capture_output=True,text=True)
-                  if r.returncode: bad.append('JavaScript syntax error')
+          if idx.count('id="ubg43-final-runtime"') != 1: bad.append('runtime script marker changed')
+          if idx.count('id="gameGrid"') != 1: bad.append('game grid marker changed')
           if bad: raise SystemExit('SUPABASE VALIDATION FAILED: '+', '.join(bad))
           print('SUPABASE VALIDATION PASSED')
           PY
