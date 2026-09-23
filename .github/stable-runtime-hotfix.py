@@ -104,7 +104,7 @@ async function incrementGlobal(c){
 const recordPlay=c=>{const h=read('ubg43_final_plays',{}),k=playKey(c),x=h[k]||{title:titleOf(c),plays:0,last:0};x.plays++;x.last=Date.now();h[k]=x;write('ubg43_final_plays',h);incrementGlobal(c)};
 const recordSearch=q=>{const n=norm(q);if(n.length<2)return;const h=read('ubg43_final_searches',{}),x=h[n]||{count:0,last:0};x.count++;x.last=Date.now();h[n]=x;write('ubg43_final_searches',h)};
 const escapeHtml=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-const isRawGame=u=>/^https:\/\/raw\.githubusercontent\.com\/gn-math\/html\//i.test(u);
+const isRawGame=u=>/^https:\/\/raw\.githubusercontent\.com\//i.test(u);
 const rawBase=u=>{try{return new URL('.',u).href}catch(_){return u}};
 function buildGameWindow(w,title){
   const d=w.document;
@@ -126,9 +126,13 @@ function stripKnownAds(html){
     if(adPattern.test(raw))el.remove();
   });
   d.querySelectorAll('ins.adsbygoogle,.adsbygoogle,[id*="ad-container" i],[id*="adbanner" i],[id*="advertisement" i],[class*="advertisement" i]').forEach(el=>el.remove());
+  d.querySelectorAll('meta[http-equiv="refresh" i]').forEach(el=>{if(adPattern.test(el.getAttribute('content')||''))el.remove()});
   const style=d.createElement('style');
   style.textContent='[id*="ad-container" i],[id*="adbanner" i],[id*="advertisement" i],[class*="advertisement" i],ins.adsbygoogle,.adsbygoogle{display:none!important;visibility:hidden!important}';
   (d.head||d.documentElement).appendChild(style);
+  const cleaner=d.createElement('script');
+  cleaner.textContent=`(()=>{const p=/doubleclick\\.net|googlesyndication\\.com|googleadservices\\.com|adservice\\.google\\.com|adsbygoogle|adsterra\\.com|propellerads\\.com|monetag\\.com|popads\\.net|popcash\\.net|exoclick\\.com|juicyads\\.com|onclickads\\.com|advertisement/i;const clean=()=>{document.querySelectorAll('script[src],iframe[src],frame[src],object[data],embed[src],[id*="ad-container" i],[id*="adbanner" i],[id*="advertisement" i],[class*="advertisement" i],ins.adsbygoogle,.adsbygoogle').forEach(el=>{const raw=[el.getAttribute?.('src'),el.getAttribute?.('data'),el.id,el.className,el.textContent].filter(Boolean).join(' ');if(p.test(raw))el.remove()})};clean();new MutationObserver(clean).observe(document.documentElement,{subtree:true,childList:true})})()`;
+  (d.body||d.documentElement).appendChild(cleaner);
   return '<!doctype html>\n'+d.documentElement.outerHTML;
 }
 async function mountGame(w,u,title){
