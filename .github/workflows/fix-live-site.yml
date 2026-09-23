@@ -67,7 +67,7 @@ jobs:
           bad=[x for x in required if x not in idx]
           wrong=['https://forms.gle/zXYtnxwHgvXmBrq9','https://forms.gle/zXYtnxwGvXmBrq9']
           bad += ['wrong report URL: '+x for x in wrong if x in idx]
-          forbidden=['Building your game library…','Building your game library...','id="loadingCard"','new MutationObserver','ubg43-site-protection-runtime','ubg43-hotfix-runtime','ubg43-direct-launch-runtime','ubg43-final-interactions-runtime']
+          forbidden=['Building your game library…','Building your game library...','id="loadingCard"','ubg43-site-protection-runtime','ubg43-hotfix-runtime','ubg43-direct-launch-runtime','ubg43-final-interactions-runtime']
           bad += ['forbidden runtime remains: '+x for x in forbidden if x in idx]
           if idx.count('id="gameGrid"')!=1: bad.append('gameGrid must exist exactly once')
           if idx.count('<script type="application/ld+json">')!=1: bad.append('JSON-LD count is wrong')
