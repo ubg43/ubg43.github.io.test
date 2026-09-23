@@ -35,7 +35,7 @@ jobs:
           import re,sys,tempfile,subprocess
           idx=Path('index.html').read_text(encoding='utf-8')
           leg=Path('legacy-index.html').read_text(encoding='utf-8')
-          required=['id="gameGrid"','id="searchBar"','id="categoryToggle"','id="randomGameButton"','id="reportGameButton"','window.openGame=openGame','Play games instantly with UBG43!','1000+ games','Trending Now','New Games','You may also like','https://forms.gle/zXYtnxwXhGvXmBrq9','legacy-index.html','zones.json','rel="canonical"','application/ld+json','function setSearchMode','function isTrending','window.openGame=openGame','.ubg43-badge.new','.ubg43-badge.trending']
+          required=['id="gameGrid"','id="searchBar"','id="categoryToggle"','id="randomGameButton"','id="reportGameButton"','window.openGame=openGame','Play games instantly with UBG43!','1000+ games','Trending Now','New Games','You may also like','https://forms.gle/zXYtnxwXhGvXmBrq9','legacy-index.html','zones.json','rel="canonical"','application/ld+json','function setSearchMode','function isTrending','window.openGame=openGame','.ubg43-badge.new','.ubg43-badge.trending','api.counterapi.dev','ubg43-global-trending-v1','function loadGlobalTrending','Most played across UBG43']
           bad=[x for x in required if x not in idx]
           wrong_urls=['https://forms.gle/zXYtnxwHgvXmBrq9','https://forms.gle/zXYtnxwGvXmBrq9']
           bad += ['wrong report URL: '+x for x in wrong_urls if x in idx]
