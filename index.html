@@ -4263,7 +4263,7 @@
 .ubg43-badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px 8px 8px 6px;font:900 9px/1 Arial,sans-serif;letter-spacing:.06em;box-shadow:0 4px 10px rgba(0,0,0,.22);white-space:nowrap}
 .ubg43-badge.new{background:#e52424;color:#ffe600}.ubg43-badge.trending{background:#ffe600;color:#c31d1d}
 .search-shell input[type="search"]{-webkit-appearance:textfield;appearance:textfield}.search-shell input[type="search"]::-webkit-search-cancel-button,.search-shell input[type="search"]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}.search-clear{display:none;align-items:center;justify-content:center;padding:0;margin:0;line-height:1;text-align:center;box-sizing:border-box}
-.ubg43-searching .hero{display:none}.ubg43-searching #searchPage{display:block!important}.ubg43-searching #gameGrid{padding-top:6px}.ubg43-searching #trendingSection,.ubg43-searching #newSection{display:none!important}.ubg43-category-view #trendingSection,.ubg43-category-view #newSection{display:none!important}
+.ubg43-searching .hero{display:none}.ubg43-searching #searchPage{display:block!important}.ubg43-searching #gameGrid{padding-top:6px}.ubg43-searching #trendingSection,.ubg43-searching #newSection{display:block!important}.ubg43-category-view #trendingSection,.ubg43-category-view #newSection{display:none!important}
 @media(max-width:640px){.ubg43-badge{height:20px;padding:0 7px;font-size:8px}}
 </style>
 <script id="ubg43-final-runtime">
@@ -4316,15 +4316,7 @@ const rawBase=u=>{try{return new URL('.',u).href}catch(_){return u}};
 function buildGameWindow(w,title){
   const d=w.document;
   d.open();
-  d.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title||'UBG43 Game')}</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06142f}#stage{position:fixed;inset:0;width:100%;height:100%}#frame{width:100%;height:100%;border:0;display:block;background:#fff}</style><style id="ubg43-search-rail-visibility">
-/* Search mode hides homepage rails. A selected category hides them too; All Games restores them. */
-.ubg43-searching .ubg43-home-secondary,
-.ubg43-searching #trendingSection,
-.ubg43-searching #newSection,
-.ubg43-category-view #trendingSection,
-.ubg43-category-view #newSection{display:none!important}
-</style>
-</head><body><div id="stage"></div></body></html>`);
+  d.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title||'UBG43 Game')}</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06142f}#stage{position:fixed;inset:0;width:100%;height:100%}#frame{width:100%;height:100%;border:0;display:block;background:#fff}</style></head><body><div id="stage"></div></body></html>`);
   d.close();
 }
 async function mountGame(w,u,title){
@@ -4468,6 +4460,7 @@ function start(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+
 <script id="ubg43-interaction-polish-runtime">
 (()=>{
 'use strict';
