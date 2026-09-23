@@ -62,6 +62,7 @@
 
 
 
+
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"UBG43","alternateName":"UBG43 Unblocked Games","url":"https://ubg43.github.io/","description":"UBG43 is a fast unblocked games site with 1000+ games, quick search, automatic categories, new games, trending picks and personalized recommendations."}</script>
 </head>
 <body>
@@ -4274,6 +4275,8 @@
 
 
 
+
+
 <style id="ubg43-final-runtime-style">
 .ubg43-badges{position:absolute;left:9px;top:9px;z-index:20;display:flex;flex-direction:column;gap:5px;pointer-events:none}
 .ubg43-badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px 8px 8px 6px;font:900 9px/1 Arial,sans-serif;letter-spacing:.06em;box-shadow:0 4px 10px rgba(0,0,0,.22);white-space:nowrap}
@@ -4417,9 +4420,12 @@ function fillRail(rail,srcs){if(!rail)return;rail.innerHTML='';const used=new Se
 function renderRails(){
   const cs=cards(),fresh=cs.filter(isNew).slice(0,24);
   const live=cs.filter(c=>globalCount(c)>0).sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b)));
-  const backup=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,Math.max(0,24-live.length));
+  const remaining=Math.max(0,24-live.length);
+  const starterNew=cs.filter(c=>isNew(c)&&!live.includes(c)).slice(0,Math.min(8,remaining));
+  const starterOther=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,Math.max(0,remaining-starterNew.length));
+  const backup=starterNew.concat(starterOther);
   fallbackTrendingKeys.clear();
-  if(live.length<24)backup.forEach(c=>fallbackTrendingKeys.add(keyOf(c)));
+  backup.forEach(c=>fallbackTrendingKeys.add(keyOf(c)));
   fillRail(trendRail,live.concat(backup).slice(0,24));
   fillRail(newRail,fresh.length?fresh:cs.filter(isNew).slice(0,24));
   updateTrendRailState();
