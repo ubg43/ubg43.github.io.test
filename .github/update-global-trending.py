@@ -7,6 +7,7 @@ import re
 import time
 import urllib.parse
 import urllib.request
+from urllib.error import HTTPError
 
 NAMESPACE = "ubg43-global-trending-v1"
 SOURCE = Path("legacy-index.html")
@@ -76,6 +77,7 @@ def extract_games() -> list[dict]:
         raise SystemExit(f"Only {len(out)} games found in legacy-index.html; refusing to overwrite global trending with an incomplete list.")
     return out
 
+ERROR_CODES = {}
 def fetch_count(key: str) -> tuple[str, int | None]:
     url = f"https://api.counterapi.dev/v1/{urllib.parse.quote(NAMESPACE, safe='')}/{urllib.parse.quote(key, safe='')}"
     req = urllib.request.Request(url, headers={"User-Agent": "UBG43-global-trending/1.0"})
@@ -85,7 +87,11 @@ def fetch_count(key: str) -> tuple[str, int | None]:
         value = data.get("count", data.get("value", data.get("data", {}).get("count") if isinstance(data.get("data"), dict) else None))
         value = int(value)
         return key, max(0, value)
+    except HTTPError as exc:
+        ERROR_CODES[exc.code] = ERROR_CODES.get(exc.code, 0) + 1
+        return key, None
     except Exception:
+        ERROR_CODES["other"] = ERROR_CODES.get("other", 0) + 1
         return key, None
 
 def main() -> None:
@@ -122,7 +128,7 @@ def main() -> None:
         "successfulReads": ok,
     }
     OUTPUT.write_text(json.dumps(snapshot, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"GLOBAL TRENDING SNAPSHOT: scanned={len(games)} successful_reads={ok} nonzero={len(rows)} top={len(snapshot['games'])}")
+    print(f"GLOBAL TRENDING SNAPSHOT: scanned={len(games)} successful_reads={ok} nonzero={len(rows)} top={len(snapshot['games'])} errors={ERROR_CODES}")
 
 if __name__ == "__main__":
     main()
