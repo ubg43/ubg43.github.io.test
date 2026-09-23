@@ -14,16 +14,16 @@ OUTPUT = Path("global-trending.json")
 MAX_WORKERS = 24
 REQUEST_TIMEOUT = 6
 
-CARD_RE = re.compile(r'<div\\s+class="game-card"[^>]*>.*?</div>', re.I | re.S)
+CARD_RE = re.compile(r'<div\s+class="game-card"[^>]*>.*?</div>', re.I | re.S)
 TITLE_RE = re.compile(r'<h3[^>]*>(.*?)</h3>', re.I | re.S)
 URL_PATTERNS = [
-    re.compile(r"openGame\\(\\s*['\"]([^'\"]+)", re.I),
-    re.compile(r"window\\.open\\(\\s*['\"]([^'\"]+)", re.I),
+    re.compile(r"openGame\(\s*['\"]([^'\"]+)", re.I),
+    re.compile(r"window\.open\(\s*['\"]([^'\"]+)", re.I),
     re.compile(r"href=['\"]([^'\"]+)", re.I),
 ]
 
 def clean_text(value: str) -> str:
-    return re.sub(r"\\s+", " ", unescape(re.sub(r"<[^>]+>", "", value))).strip()
+    return re.sub(r"\s+", " ", unescape(re.sub(r"<[^>]+>", "", value))).strip()
 
 def normalize(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
