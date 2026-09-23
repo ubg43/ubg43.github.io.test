@@ -63,6 +63,7 @@
 
 
 
+
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"UBG43","alternateName":"UBG43 Unblocked Games","url":"https://ubg43.github.io/","description":"UBG43 is a fast unblocked games site with 1000+ games, quick search, automatic categories, new games, trending picks and personalized recommendations."}</script>
 </head>
 <body>
@@ -4277,6 +4278,9 @@
 
 
 
+
+
+
 <style id="ubg43-final-runtime-style">
 .ubg43-badges{position:absolute;left:9px;top:9px;z-index:20;display:flex;flex-direction:column;gap:5px;pointer-events:none}
 .ubg43-badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px 8px 8px 6px;font:900 9px/1 Arial,sans-serif;letter-spacing:.06em;box-shadow:0 4px 10px rgba(0,0,0,.22);white-space:nowrap}
@@ -4307,7 +4311,7 @@ const playKey=c=>norm(titleOf(c))+'|'+imageOf(c);
 const globalKey=c=>{let s=keyOf(c),h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return 'g_'+(h>>>0).toString(36)};
 const globalCount=c=>Number(globalTrending.counts[globalKey(c)]||0);
 const parseGlobalCount=data=>{const v=data?.count??data?.value??data?.data?.count??data?.data?.value;const n=Number(v);return Number.isFinite(n)?n:null};
-const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(!sub)return;const live=Object.keys(globalTrending.counts).length;sub.textContent=live?'Popular picks based on play activity':globalTrending.loading?'Trending picks • loading global play activity…':globalTrending.failed?'Trending picks • will update automatically':'Popular picks based on play activity'};
+const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(!sub)return;const live=Object.keys(globalTrending.counts).length;sub.textContent=live?'Most played across UBG43':globalTrending.loading?'Trending picks • loading global play activity…':globalTrending.failed?'Trending picks • will update automatically':'Popular picks based on play activity'};
 async function incrementGlobal(c){
   if(!c||!titleOf(c))return;
   const k=globalKey(c),now=Date.now(),sent=read('ubg43_global_sent',{}),last=Number(sent[k]||0);
@@ -4478,6 +4482,5 @@ function start(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
-
 </body>
 </html>
