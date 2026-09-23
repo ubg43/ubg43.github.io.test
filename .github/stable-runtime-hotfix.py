@@ -192,9 +192,12 @@ function fillRail(rail,srcs){if(!rail)return;rail.innerHTML='';const used=new Se
 function renderRails(){
   const cs=cards(),fresh=cs.filter(isNew).slice(0,24);
   const live=cs.filter(c=>globalCount(c)>0).sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b)));
-  const backup=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,Math.max(0,24-live.length));
+  const remaining=Math.max(0,24-live.length);
+  const starterNew=cs.filter(c=>isNew(c)&&!live.includes(c)).slice(0,Math.min(8,remaining));
+  const starterOther=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,Math.max(0,remaining-starterNew.length));
+  const backup=starterNew.concat(starterOther);
   fallbackTrendingKeys.clear();
-  if(live.length<24)backup.forEach(c=>fallbackTrendingKeys.add(keyOf(c)));
+  backup.forEach(c=>fallbackTrendingKeys.add(keyOf(c)));
   fillRail(trendRail,live.concat(backup).slice(0,24));
   fillRail(newRail,fresh.length?fresh:cs.filter(isNew).slice(0,24));
   updateTrendRailState();
