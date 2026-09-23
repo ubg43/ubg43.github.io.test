@@ -238,7 +238,7 @@ async function loadGlobalTrending(){
   }catch(_){globalTrending.failed=true}
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
-function start(){
+function start()){
   bind();sync();updateTrendRailState();
   loadGlobalTrending();
   setInterval(loadGlobalTrending,60000);
