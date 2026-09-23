@@ -180,8 +180,9 @@ async function loadLegacyIntoGrid(){
   }catch(_){}
   return cards().length;
 }
-function isNew(c){if(c.dataset.new==='1')return true;const d=Date.parse(c.dataset.newSince||c.dataset.date||'');return Number.isFinite(d)&&Date.now()-d<45*86400000}
-function isTrending(c){return globalTrending.ready&&globalCount(c)>0}
+function isNew(c){if(c.dataset.new==='1'||c.dataset.new==='true')return true;const d=Date.parse(c.dataset.newSince||c.dataset.date||'');return Number.isFinite(d)&&Date.now()-d<45*86400000}
+const fallbackTrendingKeys=new Set();
+function isTrending(c){return globalCount(c)>0||fallbackTrendingKeys.has(keyOf(c))}
 function badge(c,text,cls){const box=c.querySelector('.ubg43-badges')||(()=>{const x=document.createElement('div');x.className='ubg43-badges';c.append(x);return x})();const b=document.createElement('span');b.className='ubg43-badge '+cls;b.textContent=text;box.append(b)}
 function decorate(){const cs=cards();cs.forEach(c=>{c.querySelector('.ribbons')?.remove();c.querySelector('.ubg43-badges')?.remove();if(isNew(c))badge(c,'NEW','new');if(isTrending(c))badge(c,'TRENDING','trending')})}
 function wire(c){if(!c)return;c.tabIndex=0;if(!c.dataset.url)c.dataset.url=urlOf(c)}
@@ -190,16 +191,14 @@ function similarity(a,b){const A=new Set(norm(a).split(' ').filter(x=>x.length>1
 function fillRail(rail,srcs){if(!rail)return;rail.innerHTML='';const used=new Set();srcs.forEach(src=>{if(blockedTitle(src))return;const k=keyOf(src);if(used.has(k))return;used.add(k);const c=src.cloneNode(true);c.dataset.url=urlOf(src);c.style.display='';c.hidden=false;c.querySelector('.ribbons')?.remove();c.querySelector('.ubg43-badges')?.remove();rail.append(c);wire(c);if(isNew(src))badge(c,'NEW','new');if(isTrending(src))badge(c,'TRENDING','trending')});if(srcs.length){const d=document.createElement('div');d.className='done';d.innerHTML='<span>That’s all for now ✨<small>More games are added automatically.</small></span>';rail.append(d)}}
 function renderRails(){
   const cs=cards(),fresh=cs.filter(isNew).slice(0,24);
-  if(globalTrending.ready){
-    const tr=cs.slice().sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b))).slice(0,24);
-    fillRail(trendRail,tr);
-  }else if(trendRail){
-    trendRail.innerHTML=globalTrending.failed
-      ? '<div class="done"><span>Global trend data is temporarily unavailable.<small>Game launches still work normally.</small></span></div>'
-      : '<div class="done"><span>Collecting global play activity…<small>Play games on UBG43 and the worldwide totals will build automatically.</small></span></div>';
-  }
-  fillRail(newRail,fresh.length?fresh:cs.slice(0,24));
+  const live=cs.filter(c=>globalCount(c)>0).sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b)));
+  const backup=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,Math.max(0,24-live.length));
+  fallbackTrendingKeys.clear();
+  if(live.length<24)backup.forEach(c=>fallbackTrendingKeys.add(keyOf(c)));
+  fillRail(trendRail,live.concat(backup).slice(0,24));
+  fillRail(newRail,fresh.length?fresh:cs.filter(isNew).slice(0,24));
   updateTrendRailState();
+  decorate();
 }
 function recommendations(q){if(!recSection||!recRail)return;const ph=read('ubg43_final_plays',{}),sh=read('ubg43_final_searches',{}),n=norm(q),out=cards().filter(c=>!norm(titleOf(c)).includes(n)).map(c=>{let score=similarity(titleOf(c),q)*.72;score+=(ph[playKey(c)]?.plays||0)*.08;Object.entries(sh).forEach(([k,v])=>score+=similarity(titleOf(c),k)*Math.min(5,v.count||0)*.05);if(isNew(c))score+=.1;return {c,score}}).sort((a,b)=>b.score-a.score||titleOf(a.c).localeCompare(titleOf(b.c))).slice(0,24).map(x=>x.c);fillRail(recRail,out);recSection.classList.toggle('hidden',!out.length)}
 function setSearchMode(q){q=q.trim();if(!q){clearSearch();return}window.__ubg43SearchMode=true;document.body.classList.add('ubg43-searching');if(searchPage)searchPage.classList.remove('hidden');if(searchPageText)searchPageText.textContent=`Showing matching games for “${q}”.`;recordSearch(q);applyView();recommendations(q);results?.classList.remove('open');search?.blur()}
@@ -239,7 +238,7 @@ async function loadGlobalTrending(){
   }catch(_){globalTrending.failed=true}
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
-function start()){
+function start(){
   bind();sync();updateTrendRailState();
   loadGlobalTrending();
   setInterval(loadGlobalTrending,60000);
