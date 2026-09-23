@@ -75,15 +75,4 @@ for forbidden in ('api.counterapi.dev','ubg43-global-trending-v1','global-trendi
         raise SystemExit('Old trending dependency remains in stable runtime: '+forbidden)
 
 runtime_path.write_text(s, encoding='utf-8')
-
-for path in ['.github/workflows/fix-live-site.yml', '.github/workflows/site-health.yml', '.github/site-finalizer.py']:
-    p = Path(path)
-    if not p.exists():
-        continue
-    text = p.read_text(encoding='utf-8')
-    text = text.replace("'api.counterapi.dev','ubg43-global-trending-v1','global-trending.json','function loadGlobalTrending','Most played across UBG43'", "'wewynhmybroxzynaxnrx.supabase.co','SUPABASE_TRENDING_URL','function loadGlobalTrending','Most played across UBG43'")
-    text = text.replace("'api.counterapi.dev', 'ubg43-global-trending-v1', 'global-trending.json', 'function loadGlobalTrending', 'Most played across UBG43',", "'wewynhmybroxzynaxnrx.supabase.co', 'SUPABASE_TRENDING_URL', 'function loadGlobalTrending', 'Most played across UBG43',")
-    text = text.replace("'api.counterapi.dev', 'ubg43-global-trending-v1', 'function loadGlobalTrending', 'Most played across UBG43',", "'wewynhmybroxzynaxnrx.supabase.co', 'SUPABASE_TRENDING_URL', 'function loadGlobalTrending', 'Most played across UBG43',")
-    p.write_text(text, encoding='utf-8')
-
-print('Supabase global trending activated in the canonical runtime and validation rules.')
+print('Supabase global trending activated in the canonical runtime.')
