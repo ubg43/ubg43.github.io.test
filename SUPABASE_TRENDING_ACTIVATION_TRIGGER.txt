@@ -1,0 +1,1 @@
+Supabase global trending activation trigger. This file is intentionally kept as a harmless marker so the activation workflow can run after its creation.
