@@ -64,7 +64,7 @@ new_loader = """async function loadGlobalTrending(){
   }catch(_){globalTrending.failed=true}
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
-function start()"""
+function start("""
 if loader.search(s):
     s = loader.sub(new_loader, s, count=1)
 elif "fetch(SUPABASE_TRENDING_URL+'/rest/v1/rpc/get_trending_games'" not in s:
@@ -73,6 +73,10 @@ elif "fetch(SUPABASE_TRENDING_URL+'/rest/v1/rpc/get_trending_games'" not in s:
 for forbidden in ('api.counterapi.dev','ubg43-global-trending-v1','global-trending.json'):
     if forbidden in s:
         raise SystemExit('Old trending dependency remains in stable runtime: '+forbidden)
+
+s = s.replace('function start()){','function start(){')
+if 'function start()){' in s:
+    raise SystemExit('Generated runtime still contains malformed start() syntax')
 
 runtime_path.write_text(s, encoding='utf-8')
 print('Supabase global trending activated in the canonical runtime.')
