@@ -62,9 +62,9 @@ runtime = r'''<style id="ubg43-final-runtime-style">
 'use strict';
 const $=id=>document.getElementById(id),grid=$('gameGrid'),search=$('searchBar'),clear=$('searchClear'),results=$('searchResults'),searchPage=$('searchPage'),searchPageText=$('searchPageText'),recSection=$('recommendSection'),trendRail=$('trendingRail'),newRail=$('newRail'),recRail=$('recommendRail');
 const REPORT_URL='https://forms.gle/zXYtnxwXhGvXmBrq9';
-const GLOBAL_TRENDING_API='https://api.counterapi.dev/v1';
-const GLOBAL_TRENDING_NAMESPACE='ubg43-global-trending-v1';
-const GLOBAL_TRENDING_SNAPSHOT='global-trending.json';
+const SUPABASE_TRENDING_URL='https://wewynhmybroxzynaxnrx.supabase.co';
+const SUPABASE_TRENDING_KEY='sb_publishable_9-0Y5XyyOzpnILu1cb6dHg_j8234P2p';
+const SUPABASE_TRENDING_HEADERS={'apikey':SUPABASE_TRENDING_KEY,'Authorization':'Bearer '+SUPABASE_TRENDING_KEY,'Content-Type':'application/json'};
 const globalTrending={ready:false,loading:false,failed:false,updatedAt:null,counts:Object.create(null)};
 const BLOCKED_TITLE_PATTERNS=['[!] comments','suggest games','d4c9vfywyu','1 date danger'];
 const blockedTitle=c=>{const t=String(c?.querySelector('h3')?.textContent||'').trim().toLowerCase();return BLOCKED_TITLE_PATTERNS.some(x=>t.includes(x))||t.startsWith('[!]')};
@@ -88,12 +88,12 @@ async function incrementGlobal(c){
   globalTrending.counts[k]=(globalTrending.counts[k]||0)+1;
   renderRails();decorate();
   try{
-    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6000);
-    const r=await fetch(GLOBAL_TRENDING_API+'/'+encodeURIComponent(GLOBAL_TRENDING_NAMESPACE)+'/'+encodeURIComponent(k)+'/up',{cache:'no-store',mode:'cors',signal:controller.signal});
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
+    const r=await fetch(SUPABASE_TRENDING_URL+'/rest/v1/rpc/record_game_play',{method:'POST',headers:SUPABASE_TRENDING_HEADERS,body:JSON.stringify({p_game_key:k,p_title:titleOf(c),p_game_url:urlOf(c)}),cache:'no-store',signal:controller.signal});
     clearTimeout(timer);
-    if(!r.ok)throw new Error('global increment '+r.status);
-    const data=await r.json(),server=parseGlobalCount(data);
-    if(server!==null)globalTrending.counts[k]=server;
+    if(!r.ok)throw new Error('Supabase play '+r.status);
+    const server=Number(await r.json());
+    if(Number.isFinite(server))globalTrending.counts[k]=server;
     globalTrending.ready=true;globalTrending.failed=false;updateTrendRailState();renderRails();decorate();
   }catch(_){
     if(!globalTrending.ready)globalTrending.failed=true;
@@ -227,22 +227,19 @@ async function loadGlobalTrending(){
   globalTrending.loading=true;updateTrendRailState();
   try{
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
-    const r=await fetch(GLOBAL_TRENDING_SNAPSHOT+'?v='+Date.now(),{cache:'no-store',signal:controller.signal});
+    const r=await fetch(SUPABASE_TRENDING_URL+'/rest/v1/rpc/get_trending_games',{method:'POST',headers:SUPABASE_TRENDING_HEADERS,body:JSON.stringify({p_limit:48}),cache:'no-store',signal:controller.signal});
     clearTimeout(timer);
-    if(!r.ok)throw new Error('global snapshot '+r.status);
-    const data=await r.json(),rows=Array.isArray(data?.games)?data.games:[];
-    const map=Object.create(null);
-    rows.forEach(x=>{const k=String(x?.key||'');const n=Number(x?.count||0);if(k&&Number.isFinite(n)&&n>0)map[k]=n});
+    if(!r.ok)throw new Error('Supabase trending '+r.status);
+    const rows=await r.json(),map=Object.create(null);
+    (Array.isArray(rows)?rows:[]).forEach(x=>{const k=String(x?.game_key||'');const n=Number(x?.play_count||0);if(k&&Number.isFinite(n)&&n>0)map[k]=n});
     globalTrending.counts=map;
-    globalTrending.updatedAt=data?.updatedAt||null;
+    globalTrending.updatedAt=new Date().toISOString();
     globalTrending.ready=true;
     globalTrending.failed=false;
-  }catch(_){
-    globalTrending.failed=true;
-  }
+  }catch(_){globalTrending.failed=true}
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
-function start(){
+function start()){
   bind();sync();updateTrendRailState();
   loadGlobalTrending();
   setInterval(loadGlobalTrending,60000);
