@@ -78,7 +78,7 @@ const playKey=c=>norm(titleOf(c))+'|'+imageOf(c);
 const globalKey=c=>{let s=keyOf(c),h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return 'g_'+(h>>>0).toString(36)};
 const globalCount=c=>Number(globalTrending.counts[globalKey(c)]||0);
 const parseGlobalCount=data=>{const v=data?.count??data?.value??data?.data?.count??data?.data?.value;const n=Number(v);return Number.isFinite(n)?n:null};
-const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(sub)sub.textContent=globalTrending.ready?'Most played across UBG43':'Loading global play activity across UBG43…'};
+const updateTrendRailState=()=>{const sub=document.querySelector('#trendingSection .section-sub');if(!sub)return;sub.textContent=globalTrending.ready?'Most played across UBG43':globalTrending.loading?'Loading global play activity across UBG43…':globalTrending.failed?'Global play activity is temporarily unavailable':'Loading global play activity across UBG43…'};
 async function incrementGlobal(c){
   if(!c||!titleOf(c))return;
   const k=globalKey(c),now=Date.now(),sent=read('ubg43_global_sent',{}),last=Number(sent[k]||0);
@@ -193,7 +193,9 @@ function renderRails(){
     const tr=cs.slice().sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b))).slice(0,24);
     fillRail(trendRail,tr);
   }else if(trendRail){
-    trendRail.innerHTML='<div class="done"><span>Global trends are loading…<small>Play activity from across UBG43 will appear here.</small></span></div>';
+    trendRail.innerHTML=globalTrending.failed
+      ? '<div class="done"><span>Global trends are temporarily unavailable.<small>Game launches still work normally.</small></span></div>'
+      : '<div class="done"><span>Global trends are loading…<small>Play activity from across UBG43 will appear here.</small></span></div>';
   }
   fillRail(newRail,fresh.length?fresh:cs.slice(0,24));
   updateTrendRailState();
