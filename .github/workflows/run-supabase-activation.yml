@@ -1,0 +1,50 @@
+name: Run Supabase trending activation
+on:
+  push:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: ubg43-supabase-activation-run
+  cancel-in-progress: true
+jobs:
+  activate:
+    if: ${{ github.event_name != 'push' || !contains(github.event.head_commit.message, '[live-fix]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Activate Supabase backend
+        run: python3 .github/activate-supabase-trending.py
+      - name: Rebuild homepage
+        run: python3 .github/stable-runtime-hotfix.py
+      - name: Validate the final homepage
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess, tempfile
+          idx=Path('index.html').read_text(encoding='utf-8')
+          required=['wewynhmybroxzynaxnrx.supabase.co','SUPABASE_TRENDING_URL','function loadGlobalTrending','Most played across UBG43','window.openGame=openGame','id="gameGrid"','id="searchBar"']
+          bad=[x for x in required if x not in idx]
+          for old in ('api.counterapi.dev','ubg43-global-trending-v1','global-trending.json'):
+              if old in idx: bad.append('old trending backend remains: '+old)
+          scripts=re.findall(r'<script([^>]*)>(.*?)</script>',idx,re.I|re.S)
+          with tempfile.TemporaryDirectory() as td:
+              for i,(attrs,body) in enumerate(scripts):
+                  if 'application/ld+json' in attrs.lower() or not body.strip(): continue
+                  f=Path(td)/f'script{i}.js';f.write_text(body,encoding='utf-8')
+                  r=subprocess.run(['node','--check',str(f)],capture_output=True,text=True)
+                  if r.returncode: bad.append('JavaScript syntax error')
+          if bad: raise SystemExit('SUPABASE VALIDATION FAILED: '+', '.join(bad))
+          print('SUPABASE VALIDATION PASSED')
+          PY
+      - name: Commit activation
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html .github/stable-runtime-hotfix.py .github/activate-supabase-trending.py .github/workflows/fix-live-site.yml .github/workflows/site-health.yml .github/site-finalizer.py
+          git diff --cached --quiet && exit 0
+          git commit -m 'Activate Supabase global trending [live-fix]'
+          git fetch origin main
+          git rebase origin/main
+          git push
