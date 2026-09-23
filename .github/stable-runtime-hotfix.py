@@ -112,6 +112,25 @@ function buildGameWindow(w,title){
   d.write(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(title||'UBG43 Game')}</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#06142f}#stage{position:fixed;inset:0;width:100%;height:100%}#frame{width:100%;height:100%;border:0;display:block;background:#fff}</style></head><body><div id="stage"></div></body></html>`);
   d.close();
 }
+const AD_HOST_PATTERNS=['doubleclick.net','googlesyndication.com','googleadservices.com','adservice.google.com','adsbygoogle','adsterra.com','propellerads.com','monetag.com','popads.net','popcash.net','exoclick.com','juicyads.com','onclickads.com'];
+const AD_HTML_PATTERNS=['adsbygoogle','doubleclick','googlesyndication','googleadservices','adservice.google','adsterra','propellerads','monetag','popads','popcash','exoclick','juicyads','onclickads','advertisement'];
+const adPattern=new RegExp(AD_HOST_PATTERNS.concat(AD_HTML_PATTERNS).map(x=>x.replace(/[.*+?^{}()|[\]\\]/g,'\\$&')).join('|'),'i');
+function stripKnownAds(html){
+  const d=new DOMParser().parseFromString(html,'text/html');
+  d.querySelectorAll('script[src],iframe[src],frame[src],object[data],embed[src]').forEach(el=>{
+    const raw=[el.getAttribute('src'),el.getAttribute('data')].filter(Boolean).join(' ');
+    if(adPattern.test(raw))el.remove();
+  });
+  d.querySelectorAll('script').forEach(el=>{
+    const raw=(el.getAttribute('src')||'')+' '+(el.textContent||'');
+    if(adPattern.test(raw))el.remove();
+  });
+  d.querySelectorAll('ins.adsbygoogle,.adsbygoogle,[id*="ad-container" i],[id*="adbanner" i],[id*="advertisement" i],[class*="advertisement" i]').forEach(el=>el.remove());
+  const style=d.createElement('style');
+  style.textContent='[id*="ad-container" i],[id*="adbanner" i],[id*="advertisement" i],[class*="advertisement" i],ins.adsbygoogle,.adsbygoogle{display:none!important;visibility:hidden!important}';
+  (d.head||d.documentElement).appendChild(style);
+  return '<!doctype html>\n'+d.documentElement.outerHTML;
+}
 async function mountGame(w,u,title){
   if(!w||w.closed)return;
   buildGameWindow(w,title);
@@ -130,7 +149,7 @@ async function mountGame(w,u,title){
       const r=await fetch(u,{cache:'no-store',mode:'cors',signal:controller.signal});
       clearTimeout(timer);
       if(!r.ok)throw new Error('Game source unavailable');
-      let html=await r.text();
+      let html=stripKnownAds(await r.text());
       const base=rawBase(u).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
       if(!/<base\b/i.test(html)) html=html.replace(/<head([^>]*)>/i,'<head$1><base href="${base}">');
       const blobUrl=URL.createObjectURL(new Blob([html],{type:'text/html'}));
