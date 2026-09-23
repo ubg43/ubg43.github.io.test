@@ -64,7 +64,8 @@ const $=id=>document.getElementById(id),grid=$('gameGrid'),search=$('searchBar')
 const REPORT_URL='https://forms.gle/zXYtnxwXhGvXmBrq9';
 const GLOBAL_TRENDING_API='https://api.counterapi.dev/v1';
 const GLOBAL_TRENDING_NAMESPACE='ubg43-global-trending-v1';
-const globalTrending={ready:false,loading:false,failed:false,counts:Object.create(null)};
+const GLOBAL_TRENDING_SNAPSHOT='global-trending.json';
+const globalTrending={ready:false,loading:false,failed:false,updatedAt:null,counts:Object.create(null)};
 const BLOCKED_TITLE_PATTERNS=['[!] comments','suggest games','d4c9vfywyu','1 date danger'];
 const blockedTitle=c=>{const t=String(c?.querySelector('h3')?.textContent||'').trim().toLowerCase();return BLOCKED_TITLE_PATTERNS.some(x=>t.includes(x))||t.startsWith('[!]')};
 const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
@@ -226,23 +227,19 @@ async function loadGlobalTrending(){
   globalTrending.loading=true;updateTrendRailState();
   try{
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
-    const r=await fetch(GLOBAL_TRENDING_API+'/'+encodeURIComponent(GLOBAL_TRENDING_NAMESPACE),{cache:'no-store',mode:'cors',signal:controller.signal});
+    const r=await fetch(GLOBAL_TRENDING_SNAPSHOT+'?v='+Date.now(),{cache:'no-store',signal:controller.signal});
     clearTimeout(timer);
-    if(!r.ok)throw new Error('global trends '+r.status);
-    const data=await r.json();
-    const counters=Array.isArray(data?.counters)?data.counters:(Array.isArray(data?.data?.counters)?data.data.counters:null);
+    if(!r.ok)throw new Error('global snapshot '+r.status);
+    const data=await r.json(),rows=Array.isArray(data?.games)?data.games:[];
     const map=Object.create(null);
-    if(counters){
-      counters.forEach(x=>{const k=String(x?.key||x?.name||'');const n=Number(x?.count??x?.value??x?.data?.count??x?.data?.value);if(k&&Number.isFinite(n))map[k]=n});
-    }else{
-      const obj=data?.counters&&typeof data.counters==='object'?data.counters:(data?.data?.counters&&typeof data.data.counters==='object'?data.data.counters:null);
-      if(obj)Object.entries(obj).forEach(([k,v])=>{const n=Number(v?.count??v?.value??v);if(Number.isFinite(n))map[k]=n});
-    }
-    if(!Object.keys(map).length&&typeof data==='object'&&!Array.isArray(data)){
-      Object.entries(data).forEach(([k,v])=>{const n=Number(v?.count??v?.value??v);if(k&&Number.isFinite(n))map[k]=n});
-    }
-    globalTrending.counts=map;globalTrending.ready=true;globalTrending.failed=false;
-  }catch(_){globalTrending.failed=true}
+    rows.forEach(x=>{const k=String(x?.key||'');const n=Number(x?.count||0);if(k&&Number.isFinite(n)&&n>0)map[k]=n});
+    globalTrending.counts=map;
+    globalTrending.updatedAt=data?.updatedAt||null;
+    globalTrending.ready=true;
+    globalTrending.failed=false;
+  }catch(_){
+    globalTrending.failed=true;
+  }
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
 function start(){
