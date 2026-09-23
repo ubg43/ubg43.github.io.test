@@ -46,7 +46,7 @@ if increment.search(s):
 elif "fetch(SUPABASE_TRENDING_URL+'/rest/v1/rpc/record_game_play'" not in s:
     raise SystemExit('Could not find incrementGlobal in stable runtime')
 
-loader = re.compile(r"async function loadGlobalTrending\(\)\{.*?\n\}\nfunction start\(\)", re.S)
+loader = re.compile(r"async function loadGlobalTrending\(\)\{.*?\n\}\nfunction start\(", re.S)
 new_loader = """async function loadGlobalTrending(){
   if(globalTrending.loading)return;
   globalTrending.loading=true;updateTrendRailState();
@@ -64,7 +64,7 @@ new_loader = """async function loadGlobalTrending(){
   }catch(_){globalTrending.failed=true}
   globalTrending.loading=false;updateTrendRailState();decorate();renderRails();applyView();
 }
-function start("""
+function start()"""
 if loader.search(s):
     s = loader.sub(new_loader, s, count=1)
 elif "fetch(SUPABASE_TRENDING_URL+'/rest/v1/rpc/get_trending_games'" not in s:
@@ -76,7 +76,6 @@ for forbidden in ('api.counterapi.dev','ubg43-global-trending-v1','global-trendi
 
 runtime_path.write_text(s, encoding='utf-8')
 
-# Keep the existing maintenance validation aligned with the new backend.
 for path in ['.github/workflows/fix-live-site.yml', '.github/workflows/site-health.yml', '.github/site-finalizer.py']:
     p = Path(path)
     if not p.exists():
