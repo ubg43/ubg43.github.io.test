@@ -25,6 +25,7 @@ required = [
     'window.openGame=openGame', 'function setSearchMode', 'about:blank', 'ubg43-final-runtime',
     'function isTrending', '.ubg43-badge.new', '.ubg43-badge.trending', "window.open(REPORT_URL,'_blank','noopener,noreferrer')",
     REPORT_URL, 'legacy-index.html', 'zones.json', '<title>Google Docs</title>',
+    'api.counterapi.dev', 'ubg43-global-trending-v1', 'function loadGlobalTrending', 'Most played across UBG43',
     '.ubg43-home-secondary{display:block}', '.ubg43-searching #trendingSection,.ubg43-searching #newSection{display:none!important}'
 ]
 missing = [x for x in required if x not in text]
