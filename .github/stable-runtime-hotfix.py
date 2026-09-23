@@ -53,6 +53,8 @@ runtime = r'''<style id="ubg43-final-runtime-style">
 .ubg43-badges{position:absolute;left:9px;top:9px;z-index:20;display:flex;flex-direction:column;gap:5px;pointer-events:none}
 .ubg43-badge{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:6px 8px 8px 6px;font:900 9px/1 Arial,sans-serif;letter-spacing:.06em;box-shadow:0 4px 10px rgba(0,0,0,.22);white-space:nowrap}
 .ubg43-badge.new{background:#e52424;color:#ffe600}.ubg43-badge.trending{background:#ffe600;color:#c31d1d}
+.search-shell .search-clear{display:none;align-items:center;justify-content:center;padding:0!important;line-height:1!important;text-align:center!important;text-indent:0!important;font-family:Arial,sans-serif!important}
+.arrow{display:grid!important;place-items:center!important;padding:0!important;line-height:1!important;text-align:center!important;text-indent:0!important;font-family:Arial,sans-serif!important}
 .search-shell input[type="search"]{-webkit-appearance:textfield;appearance:textfield}.search-shell input[type="search"]::-webkit-search-cancel-button,.search-shell input[type="search"]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;display:none}.search-clear{display:none;align-items:center;justify-content:center;padding:0;margin:0;line-height:1;text-align:center;box-sizing:border-box}
 .ubg43-searching .hero{display:none}.ubg43-searching #searchPage{display:block!important}.ubg43-searching #gameGrid{padding-top:6px}.ubg43-searching #trendingSection,.ubg43-searching #newSection{display:block!important}.ubg43-category-view #trendingSection,.ubg43-category-view #newSection{display:none!important}
 @media(max-width:640px){.ubg43-badge{height:20px;padding:0 7px;font-size:8px}}
@@ -192,13 +194,17 @@ function fillRail(rail,srcs){if(!rail)return;rail.innerHTML='';const used=new Se
 function renderRails(){
   const cs=cards(),fresh=cs.filter(isNew).slice(0,24);
   const live=cs.filter(c=>globalCount(c)>0).sort((a,b)=>(globalCount(b)-globalCount(a))||titleOf(a).localeCompare(titleOf(b)));
-  const remaining=Math.max(0,24-live.length);
-  const starterNew=cs.filter(c=>isNew(c)&&!live.includes(c)).slice(0,Math.min(8,remaining));
-  const starterOther=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,Math.max(0,remaining-starterNew.length));
-  const backup=starterNew.concat(starterOther);
+  const starterPool=cs.filter(c=>isNew(c)&&!live.includes(c));
+  const starterNew=starterPool.slice(0,4);
+  const starterOther=cs.filter(c=>!isNew(c)&&!live.includes(c)).slice(0,24);
+  const reserve=starterNew.concat(starterOther);
+  const liveSlots=Math.max(0,24-starterNew.length);
+  const trend=live.slice(0,liveSlots);
+  const used=new Set(trend.map(keyOf));
+  const backup=reserve.filter(c=>!used.has(keyOf(c))).slice(0,Math.max(0,24-trend.length));
   fallbackTrendingKeys.clear();
   backup.forEach(c=>fallbackTrendingKeys.add(keyOf(c)));
-  fillRail(trendRail,live.concat(backup).slice(0,24));
+  fillRail(trendRail,trend.concat(backup).slice(0,24));
   fillRail(newRail,fresh.length?fresh:cs.filter(isNew).slice(0,24));
   updateTrendRailState();
   decorate();
