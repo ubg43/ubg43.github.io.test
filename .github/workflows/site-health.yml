@@ -35,11 +35,11 @@ jobs:
           import re,sys,tempfile,subprocess
           idx=Path('index.html').read_text(encoding='utf-8')
           leg=Path('legacy-index.html').read_text(encoding='utf-8')
-          required=['id="gameGrid"','id="searchBar"','id="categoryToggle"','id="randomGameButton"','id="reportGameButton"','window.openGame=openGame','Play games instantly with UBG43!','1000+ games','Trending Now','New Games','You may also like','https://forms.gle/zXYtnxwXhGvXmBrq9','legacy-index.html','zones.json','rel="canonical"','application/ld+json','function setSearchMode','function isTrending','window.openGame=openGame','.ubg43-badge.new','.ubg43-badge.trending','wewynhmybroxzynaxnrx.supabase.co','SUPABASE_TRENDING_URL','function loadGlobalTrending','Popular picks based on play activity']
+          required=['id="gameGrid"','id="searchBar"','id="categoryToggle"','id="randomGameButton"','id="reportGameButton"','window.openGame=openGame','Play games instantly with UBG43!','1000+ games','Trending Now','New Games','You may also like','https://forms.gle/zXYtnxwXhGvXmBrq9','legacy-index.html','zones.json','rel="canonical"','application/ld+json','function setSearchMode','function isTrending','window.openGame=openGame','.ubg43-badge.new','.ubg43-badge.trending','wewynhmybroxzynaxnrx.supabase.co','SUPABASE_TRENDING_URL','function loadGlobalTrending','Popular picks based on play activity','const isRawGame=u=>/^https:\\/\\/raw\\.githubusercontent\\.com\\//i.test(u);','function stripKnownAds(html){','let html=stripKnownAds(await r.text());','doubleclick.net','googlesyndication.com','adsterra.com','propellerads.com','monetag.com','popads.net','popcash.net','new MutationObserver(clean)']
           bad=[x for x in required if x not in idx]
           wrong_urls=['https://forms.gle/zXYtnxwHgvXmBrq9','https://forms.gle/zXYtnxwGvXmBrq9']
           bad += ['wrong report URL: '+x for x in wrong_urls if x in idx]
-          forbidden=['new MutationObserver','ubg43-site-protection-runtime','ubg43-hotfix-runtime','ubg43-direct-launch-runtime','ubg43-final-interactions-runtime','Building your game library…','Building your game library...']
+          forbidden=['ubg43-site-protection-runtime','ubg43-hotfix-runtime','ubg43-direct-launch-runtime','ubg43-final-interactions-runtime','Building your game library…','Building your game library...']
           bad += ['forbidden: '+x for x in forbidden if x in idx]
           if idx.count('id="gameGrid"')!=1: bad.append('gameGrid count != 1')
           if idx.count('<script type="application/ld+json">')!=1: bad.append('JSON-LD count != 1')
@@ -65,6 +65,11 @@ jobs:
           if 'from game_validator import validate_candidate' not in extra: bad.append('extra-games missing strict game validator')
           if 'stable-runtime-hotfix.py' not in Path('.github/workflows/auto-categories.yml').read_text(encoding='utf-8'): bad.append('auto workflow missing stable runtime step')
           if 'stable-runtime-hotfix.py' not in Path('.github/workflows/extra-games.yml').read_text(encoding='utf-8'): bad.append('extra workflow missing stable runtime step')
+          raw_game_urls=re.findall(r'https://raw\.githubusercontent\.com/[^\'\"\s<>]+',idx,re.I)
+          if not raw_game_urls: bad.append('no raw hosted game URLs found for ad-filter coverage')
+          for wf in ['fix-live-site.yml','undertale-games.yml']:
+              wp=Path('.github/workflows')/wf
+              if wp.exists() and 'stable-runtime-hotfix.py' not in wp.read_text(encoding='utf-8'): bad.append(f'{wf} missing stable runtime step')
           scripts=re.findall(r'<script([^>]*)>(.*?)</script>',idx,re.I|re.S)
           with tempfile.TemporaryDirectory() as td:
               for i,(attrs,body) in enumerate(scripts):
