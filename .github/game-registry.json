@@ -1248,6 +1248,10 @@
   "game name": {
     "first_seen": null
   },
+  "gang beasts": {
+    "first_seen": "2026-09-30",
+    "url": "https://raw.githubusercontent.com/gn-math/html/main/867.html"
+  },
   "generic fighter maybe": {
     "first_seen": "2026-09-18"
   },
@@ -1619,6 +1623,10 @@
   },
   "lethal ape": {
     "first_seen": "2026-09-18"
+  },
+  "lethal company": {
+    "first_seen": "2026-09-30",
+    "url": "https://raw.githubusercontent.com/gn-math/html/main/865.html"
   },
   "level 67": {
     "first_seen": null
@@ -2712,6 +2720,10 @@
   "tattletail": {
     "first_seen": "2026-09-18"
   },
+  "team fortress 2": {
+    "first_seen": "2026-09-30",
+    "url": "https://raw.githubusercontent.com/gn-math/html/main/866.html"
+  },
   "teen titans go jump jousts": {
     "first_seen": "2026-09-18"
   },
@@ -3065,6 +3077,10 @@
   },
   "weapon upgrade rush": {
     "first_seen": "2026-09-18"
+  },
+  "web dashers": {
+    "first_seen": "2026-09-30",
+    "url": "https://raw.githubusercontent.com/gn-math/html/main/785-upd3.html"
   },
   "webfishing": {
     "first_seen": "2026-09-18"
