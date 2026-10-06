@@ -352,6 +352,6 @@ if body_pos < 0:
     raise SystemExit('body end marker not found')
 s = s[:body_pos] + runtime + '\n</body>' + s[body_pos + len('</body>'):]
 # Keep this feature in every automated rebuild instead of letting later maintenance jobs remove it.
-const originalRuntimeMarker='UBG43_GAME_LAUNCH_SCREENS_V1';
+# UBG43_GAME_LAUNCH_SCREENS_V1 - preserve custom game launch and loading screens in every rebuild.
 p.write_text(s, encoding='utf-8')
 print('STABLE RUNTIME: about:blank game windows, no direct-launch controls, full legacy feed, working search/buttons/carousels/recommendations, and NEW/TRENDING badges.')
